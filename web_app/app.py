@@ -13,7 +13,6 @@ from src.config import Config
 
 st.set_page_config(
     page_title="Fraud Detection Dashboard",
-    page_icon="💳",
     layout="wide"
 )
 
@@ -40,42 +39,42 @@ def load_models_and_results():
             # Load PyTorch model
             model = load_model(model_path, len(Config.FEATURE_COLS))
             model.eval()
-            st.sidebar.success("✅ PyTorch Model loaded!")
+            st.sidebar.success("PyTorch Model loaded!")
         else:
-            error_msg = "⚠️ Model not found"
+            error_msg = "Model not found"
             
         if results_path.exists():
             results = joblib.load(str(results_path))
-            st.sidebar.success("✅ Results loaded!")
+            st.sidebar.success("Results loaded!")
         else:
-            error_msg = "⚠️ Training results not found"
+            error_msg = "Training results not found"
             
         if preprocessor_path.exists():
             preprocessor_data = joblib.load(str(preprocessor_path))
             preprocessor = preprocessor_data['scaler']
-            st.sidebar.success("✅ Preprocessor loaded!")
+            st.sidebar.success("Preprocessor loaded!")
         
         return model, results, preprocessor, error_msg
         
     except Exception as e:
-        return None, None, None, f"❌ Error: {str(e)}"
+        return None, None, None, f"Error: {str(e)}"
 
 model, results, preprocessor, error_msg = load_models_and_results()
 
 # Header
-st.title("💳 Credit Card Fraud Detection Dashboard")
+st.title("Credit Card Fraud Detection Dashboard")
 st.markdown("Real-time fraud detection powered by deep learning")
 st.markdown("---")
 
 # Show status
 if error_msg:
     st.warning(error_msg)
-    st.info("👉 Run: `python main.py train` to train the model")
+    st.info("Run: `python main.py train` to train the model")
 else:
-    st.success("✅ System operational - Ready to detect fraud!")
+    st.success("System operational - Ready to detect fraud!")
 
 # Sidebar
-st.sidebar.header("⚙️ Model Info")
+st.sidebar.header("Model Info")
 if results:
     st.sidebar.metric("Training Date", results.get('training_date', 'N/A'))
     st.sidebar.metric("Validation AUC", f"{results.get('val_auc', 0):.4f}")
@@ -83,7 +82,7 @@ if results:
     st.sidebar.metric("Training Time", results.get('training_time', 'N/A'))
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["📊 Overview", "🔍 Fraud Detection", "ℹ️ About"])
+tab1, tab2, tab3 = st.tabs(["Overview", "Fraud Detection", "About"])
 
 with tab1:
     st.header("Training Overview")
@@ -102,7 +101,7 @@ with tab1:
             st.metric("Epochs Trained", epochs)
         
         # Training History
-        st.subheader("📈 Training History")
+        st.subheader("Training History")
         
         history = results.get('history', {})
         
@@ -179,7 +178,7 @@ with tab1:
                 st.plotly_chart(fig_auc, use_container_width=True)
         
         # Class Distribution
-        st.subheader("📊 Training Data Distribution")
+        st.subheader("Training Data Distribution")
         class_dist = results.get('class_distribution', {})
         if class_dist:
             fig_dist = go.Figure(data=[
@@ -200,11 +199,11 @@ with tab1:
             st.plotly_chart(fig_dist, use_container_width=True)
         
         # Confusion Matrix from Test Data
-        st.subheader("🎯 Confusion Matrix (Test Set)")
+        st.subheader("Confusion Matrix (Test Set)")
         
         # Fixed threshold at optimal value for high recall
         threshold = 0.4
-        st.info("⚙️ **Classification Threshold: 0.4** (Optimized for high recall - catch more fraud cases)")
+        st.info("**Classification Threshold: 0.4** (Optimized for high recall - catch more fraud cases)")
         
         try:
             import joblib
@@ -266,7 +265,7 @@ with tab1:
                 fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
                 
                 st.write("---")
-                st.subheader("📊 Performance Metrics")
+                st.subheader("Performance Metrics")
                 
                 col1, col2, col3, col4, col5 = st.columns(5)
                 with col1:
@@ -282,7 +281,7 @@ with tab1:
                 
                 # Business impact
                 st.write("---")
-                st.subheader("💰 Business Impact Analysis")
+                st.subheader("Business Impact Analysis")
                 
                 avg_fraud_amount = 122  # From dataset analysis
                 check_cost = 2
@@ -296,21 +295,21 @@ with tab1:
                 
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric("💵 Fraud Prevented", f"${fraud_saved:,.0f}", help=f"Caught {tp} frauds × ${avg_fraud_amount}")
+                    st.metric("Fraud Prevented", f"${fraud_saved:,.0f}", help=f"Caught {tp} frauds × ${avg_fraud_amount}")
                 with col2:
-                    st.metric("💸 Fraud Missed", f"${fraud_lost:,.0f}", help=f"Missed {fn} frauds × ${avg_fraud_amount}", delta=f"-${fraud_lost:,.0f}", delta_color="inverse")
+                    st.metric("Fraud Missed", f"${fraud_lost:,.0f}", help=f"Missed {fn} frauds × ${avg_fraud_amount}", delta=f"-${fraud_lost:,.0f}", delta_color="inverse")
                 with col3:
-                    st.metric("📋 Check Costs", f"${check_costs:,.0f}", help=f"{total_flagged} flagged transactions (TP+FP) × ${check_cost}")
+                    st.metric("Check Costs", f"${check_costs:,.0f}", help=f"{total_flagged} flagged transactions (TP+FP) × ${check_cost}")
                 with col4:
-                    st.metric("✅ Net Benefit", f"${net_benefit:,.0f}", help="Saved - Lost - Costs", delta=f"+${net_benefit:,.0f}" if net_benefit > 0 else f"${net_benefit:,.0f}", delta_color="normal" if net_benefit > 0 else "inverse")
+                    st.metric("Net Benefit", f"${net_benefit:,.0f}", help="Saved - Lost - Costs", delta=f"+${net_benefit:,.0f}" if net_benefit > 0 else f"${net_benefit:,.0f}", delta_color="normal" if net_benefit > 0 else "inverse")
                 
                 # Recommendation
                 if recall >= 0.90:
-                    st.success(f"✅ **Excellent fraud detection!** Catching {recall*100:.1f}% of fraud with {fpr*100:.2f}% false positive rate.")
+                    st.success(f"**Excellent fraud detection!** Catching {recall*100:.1f}% of fraud with {fpr*100:.2f}% false positive rate.")
                 elif recall >= 0.80:
-                    st.info(f"ℹ️ **Good fraud detection.** Catching {recall*100:.1f}% of fraud. Consider lowering threshold to catch more.")
+                    st.info(f"ℹ**Good fraud detection.** Catching {recall*100:.1f}% of fraud. Consider lowering threshold to catch more.")
                 else:
-                    st.warning(f"⚠️ **Moderate fraud detection.** Only catching {recall*100:.1f}% of fraud. Lower threshold recommended.")
+                    st.warning(f"**Moderate fraud detection.** Only catching {recall*100:.1f}% of fraud. Lower threshold recommended.")
                 
             else:
                 st.warning("Test data not found. Run evaluation first: `python main.py evaluate`")
@@ -318,30 +317,30 @@ with tab1:
         except Exception as e:
             st.error(f"Error loading confusion matrix: {str(e)}")
     else:
-        st.error("⚠️ Train the model first: `python main.py train`")
+        st.error("Train the model first: `python main.py train`")
 
 # Tab 2: Fraud Detection
 with tab2:
     if model and preprocessor:
-        st.subheader("💳 Single Transaction Testing")
-        st.info("💡 V1-V28 are PCA-transformed features (anonymized credit card data). Use preset examples below!")
+        st.subheader("Single Transaction Testing")
+        st.info("V1-V28 are PCA-transformed features (anonymized credit card data). Use preset examples below!")
         
         # Quick test presets
         st.write("**Load Test Transaction:**")
         preset_col1, preset_col2, preset_col3 = st.columns(3)
         
         with preset_col1:
-            if st.button("💚 Normal Transaction", use_container_width=True):
+            if st.button("Normal Transaction", use_container_width=True):
                 st.session_state['preset'] = 'normal'
                 st.rerun()
         
         with preset_col2:
-            if st.button("🚨 Fraud Transaction", use_container_width=True):
+            if st.button("Fraud Transaction", use_container_width=True):
                 st.session_state['preset'] = 'fraud'
                 st.rerun()
         
         with preset_col3:
-            if st.button("🎲 Random from Dataset", use_container_width=True):
+            if st.button("Random from Dataset", use_container_width=True):
                 st.session_state['preset'] = 'random'
                 st.rerun()
         
@@ -368,7 +367,7 @@ with tab2:
                             random_row = normal_df.sample(n=1).iloc[0]
                             actual_label = 0
                             transaction = random_row.drop('Class').values.reshape(1, -1)
-                            st.info(f"📌 Loaded: **Random Normal Transaction** (Actual: LEGITIMATE)")
+                            st.info(f"Loaded: **Random Normal Transaction** (Actual: LEGITIMATE)")
                         else:
                             st.error("No normal transactions found!")
                     
@@ -379,7 +378,7 @@ with tab2:
                             random_row = fraud_df.sample(n=1).iloc[0]
                             actual_label = 1
                             transaction = random_row.drop('Class').values.reshape(1, -1)
-                            st.info(f"📌 Loaded: **Random Fraud Transaction** (Actual: FRAUD)")
+                            st.info(f"Loaded: **Random Fraud Transaction** (Actual: FRAUD)")
                         else:
                             st.error("No fraud transactions found!")
                     
@@ -407,7 +406,7 @@ with tab2:
                                 actual_label = int(random_row['Class'])
                         
                         transaction = random_row.drop('Class').values.reshape(1, -1)
-                        st.info(f"📌 Loaded: **Random Transaction (50/50 split)** (Actual: {'FRAUD' if actual_label == 1 else 'LEGITIMATE'})")
+                        st.info(f"Loaded: **Random Transaction (50/50 split)** (Actual: {'FRAUD' if actual_label == 1 else 'LEGITIMATE'})")
             
             except Exception as e:
                 st.error(f"Error loading transaction: {str(e)}")
@@ -433,16 +432,16 @@ with tab2:
                 # V10 is at index 10 (Time=0, V1=1, V2=2, ..., V10=10)
                 v10_value = transaction[0][10]
                 st.metric("V10 (Fraud Indicator)", f"{v10_value:.3f}", 
-                         delta="⚠️ Suspicious" if v10_value < -5 else "✅ Normal",
+                         delta="Suspicious" if v10_value < -5 else "Normal",
                          delta_color="inverse" if v10_value < -5 else "normal")
                 # V14 is at index 14
                 v14_value = transaction[0][14]
                 st.metric("V14 (Strongest Indicator)", f"{v14_value:.3f}",
-                         delta="🚨 High Risk" if v14_value < -6 else "✅ Normal",
+                         delta="High Risk" if v14_value < -6 else "Normal",
                          delta_color="inverse" if v14_value < -6 else "normal")
             with col3:
                 if actual_label is not None:
-                    st.metric("Actual Label", "🚨 FRAUD" if actual_label == 1 else "✅ LEGITIMATE")
+                    st.metric("Actual Label", "FRAUD" if actual_label == 1 else "LEGITIMATE")
             
             # Predict button
             if st.button("🔍 Check for Fraud", type="primary", use_container_width=True):
@@ -478,8 +477,8 @@ with tab2:
                         fraud_probability = float(prediction[0][0])
                         
                         # Debug info
-                        st.write(f"🔍 Fraud probability: {fraud_probability:.4f} ({fraud_probability*100:.2f}%)")
-                        st.write(f"💰 Amount: ${transaction[0][29]:.2f} | ⏱️ Time: {int(transaction[0][0])}s since first transaction")
+                        st.write(f"Fraud probability: {fraud_probability:.4f} ({fraud_probability*100:.2f}%)")
+                        st.write(f"Amount: ${transaction[0][29]:.2f} | ⏱️ Time: {int(transaction[0][0])}s since first transaction")
                         
                         # Display result
                         st.write("---")
@@ -547,18 +546,18 @@ with tab2:
                         
                         with col1:
                             if predicted_class == 1:
-                                st.error(f"🚨 **FRAUD DETECTED!**")
+                                st.error(f"**FRAUD DETECTED!**")
                                 st.error(f"Confidence: {fraud_probability*100:.2f}%")
                             else:
-                                st.success(f"✅ **LEGITIMATE TRANSACTION**")
+                                st.success(f"**LEGITIMATE TRANSACTION**")
                                 st.success(f"Confidence: {(1-fraud_probability)*100:.2f}%")
                         
                         with col2:
                             if actual_label is not None:
                                 if predicted_class == actual_label:
-                                    st.success("✅ **CORRECT PREDICTION!**")
+                                    st.success("**CORRECT PREDICTION!**")
                                 else:
-                                    st.error("❌ **INCORRECT PREDICTION**")
+                                    st.error("**INCORRECT PREDICTION**")
                                 
                                 st.write(f"**Actual:** {'FRAUD' if actual_label == 1 else 'LEGITIMATE'}")
                                 st.write(f"**Predicted:** {'FRAUD' if predicted_class == 1 else 'LEGITIMATE'}")
@@ -567,18 +566,18 @@ with tab2:
                         st.error("Preprocessor not found!")
                 
                 except Exception as e:
-                    st.error(f"❌ Error: {str(e)}")
+                    st.error(f"Error: {str(e)}")
                     st.exception(e)
         
         else:
-            st.info("👆 Click a button above to load a transaction, or enter values manually below")
+            st.info("Click a button above to load a transaction, or enter values manually below")
         
         # Batch Analysis section
         st.write("---")
-        st.subheader("📁 Batch Analysis")
+        st.subheader("Batch Analysis")
         
         # Quick export test data button
-        if st.button("📥 Export Test Transactions (100 samples)"):
+        if st.button("Export Test Transactions (100 samples)"):
             try:
                 data_file = config.DATA_DIR / 'fraud_detection' / 'creditcard.csv'
                 if data_file.exists():
@@ -596,13 +595,13 @@ with tab2:
                     # Download
                     csv = X_test.to_csv(index=False)
                     st.download_button(
-                        "📥 Download test_transactions.csv",
+                        "Download test_transactions.csv",
                         csv,
                         "test_transactions.csv",
                         "text/csv",
                         key='download-test'
                     )
-                    st.success("✅ Test set ready! Upload it below to analyze.")
+                    st.success("Test set ready! Upload it below to analyze.")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
         
@@ -616,7 +615,7 @@ with tab2:
                 st.write("**Preview:**")
                 st.dataframe(df.head(10))
                 
-                if st.button("🔍 Analyze All Transactions"):
+                if st.button("Analyze All Transactions"):
                     with st.spinner("Analyzing..."):
                         import joblib
                         
@@ -638,7 +637,7 @@ with tab2:
                             df['Fraud_Probability'] = fraud_probs * 100
                             df['Prediction'] = ['FRAUD' if p > 0.5 else 'LEGITIMATE' for p in fraud_probs]
                             
-                            st.success("✅ Analysis Complete!")
+                            st.success("Analysis Complete!")
                             
                             col1, col2, col3 = st.columns(3)
                             
@@ -648,39 +647,39 @@ with tab2:
                             with col1:
                                 st.metric("Total", f"{total:,}")
                             with col2:
-                                st.metric("🚨 Fraud", f"{frauds:,}")
+                                st.metric("Fraud", f"{frauds:,}")
                             with col3:
-                                st.metric("✅ Legitimate", f"{total - frauds:,}")
+                                st.metric("Legitimate", f"{total - frauds:,}")
                             
                             # Results
                             st.dataframe(df[['Prediction', 'Fraud_Probability']], use_container_width=True)
                             
                             # Download
                             csv = df.to_csv(index=False)
-                            st.download_button("📥 Download Results", csv, "results.csv", "text/csv")
+                            st.download_button("Download Results", csv, "results.csv", "text/csv")
                         else:
                             st.error("Preprocessor not found!")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
     else:
-        st.error("⚠️ Train the model first: `python main.py train`")
+        st.error("Train the model first: `python main.py train`")
 
 # Tab 3: About
 with tab3:
-    st.header("ℹ️ About This System")
+    st.header("About This System")
     
     st.markdown("""
-    ### 💳 Credit Card Fraud Detection System
+    ### Credit Card Fraud Detection System
     
     **Overview:**
     This system uses deep learning to detect fraudulent credit card transactions in real-time.
     
     **Features:**
-    - 🧠 Deep Neural Network with 64→32→16 architecture
-    - ⚖️ SMOTE for handling imbalanced data
-    - 📊 Real-time prediction with confidence scores
-    - 📈 ROC-AUC and Precision-Recall metrics
-    - 🎯 Binary classification (Normal vs Fraud)
+    - Deep Neural Network with 64→32→16 architecture
+    - SMOTE for handling imbalanced data
+    - Real-time prediction with confidence scores
+    - ROC-AUC and Precision-Recall metrics
+    - Binary classification (Normal vs Fraud)
     
     **Dataset:**
     - **Features**: 30 features (Time, V1-V28 PCA components, Amount)
