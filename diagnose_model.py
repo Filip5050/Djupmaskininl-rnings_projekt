@@ -74,5 +74,5 @@ for threshold in thresholds:
     print(f"  F1-Score:  {f1:.4f}")
 
 print("\n" + "="*70)
-print(f"🎯 BEST THRESHOLD: {best_threshold:.1f} (F1-Score: {best_f1:.4f})")
+print(f"BEST THRESHOLD: {best_threshold:.1f} (F1-Score: {best_f1:.4f})")
 print("="*70)

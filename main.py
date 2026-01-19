@@ -16,27 +16,27 @@ from src.config import Config
 
 def train_command(args):
     """Execute training pipeline"""
-    print("\n🚀 Starting fraud detection training...")
+    print("\nStarting fraud detection training...")
     full_training_pipeline()
 
 
 def evaluate_command(args):
     """Execute evaluation pipeline"""
-    print("\n🔍 Evaluating fraud detection model...")
+    print("\nEvaluating fraud detection model...")
     full_evaluation_pipeline()
 
 
 def webapp_command(args):
     """Launch Streamlit web application"""
     import subprocess
-    print("\n🌐 Launching fraud detection dashboard...")
+    print("\nLaunching fraud detection dashboard...")
     subprocess.run(['streamlit', 'run', 'web_app/app.py'])
 
 
 def main():
     """Main CLI interface"""
     parser = argparse.ArgumentParser(
-        description='💳 Credit Card Fraud Detection System - Deep Learning Based Fraud Detection',
+        description='Credit Card Fraud Detection System - Deep Learning Based Fraud Detection',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -74,7 +74,7 @@ For more information, see README.md
     if not args.command:
         parser.print_help()
         print("\n" + "="*70)
-        print("💳 QUICK START - FRAUD DETECTION")
+        print("QUICK START - FRAUD DETECTION")
         print("="*70)
         print("\n1. Train model:")
         print("   python main.py train")
@@ -89,7 +89,7 @@ For more information, see README.md
     try:
         args.func(args)
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"\nError: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     print("""
     ╔═══════════════════════════════════════════════════════════╗
     ║                                                           ║
-    ║       💳 CREDIT CARD FRAUD DETECTION SYSTEM 💳           ║
+    ║       CREDIT CARD FRAUD DETECTION SYSTEM                  ║
     ║                                                           ║
     ║       Deep Learning Based Fraud Detection                 ║
     ║                                                           ║
