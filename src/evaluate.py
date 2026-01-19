@@ -61,9 +61,9 @@ def full_evaluation_pipeline():
             y_pred_proba.extend(outputs.cpu().numpy())
     
     y_pred_proba = np.array(y_pred_proba).flatten()
-    y_pred = (y_pred_proba >= 0.5).astype(int)
+    y_pred = (y_pred_proba >= 0.4).astype(int)
     
-    print(f"Predictions complete")
+    print(f"Predictions complete (threshold: 0.4)")
     
     # 4. Calculate metrics
     print("\nSTEP 4: Calculating Metrics")
@@ -136,7 +136,7 @@ def full_evaluation_pipeline():
     # Prediction Distribution
     axes[1, 1].hist(y_pred_proba[y_test == 0], bins=50, alpha=0.7, label='Normal', color='green')
     axes[1, 1].hist(y_pred_proba[y_test == 1], bins=50, alpha=0.7, label='Fraud', color='red')
-    axes[1, 1].axvline(x=0.5, color='black', linestyle='--', label='Threshold')
+    axes[1, 1].axvline(x=0.4, color='black', linestyle='--', label='Threshold')
     axes[1, 1].set_xlabel('Predicted Probability')
     axes[1, 1].set_ylabel('Count')
     axes[1, 1].set_title('Prediction Distribution', fontsize=14, fontweight='bold')

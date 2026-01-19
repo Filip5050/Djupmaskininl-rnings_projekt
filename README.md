@@ -4,13 +4,8 @@ Deep learning-based system for credit card fraud detection using PyTorch.
 
 ## Overview
 
-This project uses a 4-layer neural network with Focal Loss to handle extremely imbalanced data (0.173% fraud rate). The system achieves 93.88% recall and AUC 0.9776 on test data.
+This project uses a 4-layer neural network with Focal Loss to handle extremely imbalanced data (0.173% fraud rate). The system achieves aroudn 92% recall and AUC around 0.97 on test data.
 
-### Key Results
-- **AUC**: 0.9776
-- **Recall**: 93.88% (92/98 frauds detected)
-- **False Negatives**: 6 missed frauds
-- **Net Business Impact**: $3,080 profit after costs
 
 ## Dataset
 
@@ -149,4 +144,3 @@ Filip5050 - [GitHub](https://github.com/Filip5050)
 ## Acknowledgments
 
 - Dataset: [Credit Card Fraud Detection (Kaggle)](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
-- Original data: Worldline and ULB Machine Learning Group
