@@ -125,15 +125,6 @@ Opens Streamlit dashboard at http://localhost:8501 with:
 └── README.md               # This file
 ```
 
-## Business Impact
-
-With threshold 0.40:
-- **Frauds Caught**: 92/98 (93.88%)
-- **False Positives**: 3,614 transactions
-- **Savings**: $11,224 (92 × $122 per fraud)
-- **Lost**: $732 (6 × $122 missed frauds)
-- **Check Costs**: $7,412 (3,706 × $2 per investigation)
-- **Net Benefit**: $3,080
 
 ## Requirements
 
