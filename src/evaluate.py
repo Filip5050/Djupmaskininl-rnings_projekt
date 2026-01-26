@@ -120,11 +120,13 @@ def full_evaluation_pipeline():
     print("-"*60)
     
     accuracy = accuracy_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_pred_proba)
+    roc_auc = roc_auc_score(y_test, y_pred_proba)
+    pr_auc = average_precision_score(y_test, y_pred_proba)
     
     print(f"\nTest Metrics:")
-    print(f"   Accuracy: {accuracy:.4f}")
-    print(f"   AUC:      {auc:.4f}")
+    print(f"   Accuracy:  {accuracy:.4f}")
+    print(f"   ROC-AUC:   {roc_auc:.4f}")
+    print(f"   PR-AUC:    {pr_auc:.4f} (primary metric for imbalanced data)")
     
     print("\nClassification Report:")
     print("-"*60)
@@ -203,7 +205,7 @@ def full_evaluation_pipeline():
     
     # ROC Curve
     fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-    axes[0, 1].plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC (AUC = {auc:.4f})')
+    axes[0, 1].plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC (AUC = {roc_auc:.4f})')
     axes[0, 1].plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random')
     axes[0, 1].set_xlim([0.0, 1.0])
     axes[0, 1].set_ylim([0.0, 1.05])
@@ -272,7 +274,8 @@ def full_evaluation_pipeline():
     
     results = {
         'accuracy': accuracy,
-        'auc': auc,
+        'roc_auc': roc_auc,
+        'pr_auc': pr_auc,
         'confusion_matrix': cm,
         'classification_report': classification_report(y_test, y_pred, target_names=['Normal', 'Fraud'], output_dict=True),
         'feature_importance': importance_df.to_dict(),
@@ -292,7 +295,8 @@ def full_evaluation_pipeline():
     print("="*70)
     print(f"\nFinal Test Metrics:")
     print(f"   Accuracy:               {accuracy:.4f}")
-    print(f"   AUC:                    {auc:.4f}")
+    print(f"   ROC-AUC:                {roc_auc:.4f}")
+    print(f"   PR-AUC:                 {pr_auc:.4f}")
     print(f"   Fraud Detected:         {tp}/{fraud_count} ({tp/fraud_count:.2%})")
     print(f"   Lift:                   {lift:.1f}x")
     print(f"   Fraud Positive Rate:    {fraud_positive_rate*100:.2f}%")

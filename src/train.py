@@ -11,7 +11,7 @@ import torch.optim as optim
 from torch.utils.data import TensorDataset, DataLoader, WeightedRandomSampler
 from datetime import datetime
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score, precision_score, recall_score, accuracy_score
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, accuracy_score, average_precision_score
 from src.config import Config
 from src.data_loader import load_fraud_data, split_train_test, split_features_target
 from src.preprocessor import FraudPreprocessor
@@ -64,11 +64,12 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     all_labels = np.array(all_labels).flatten()
     
     accuracy = accuracy_score(all_labels, (all_preds >= 0.5).astype(int))
-    auc = roc_auc_score(all_labels, all_preds)
+    roc_auc = roc_auc_score(all_labels, all_preds)
+    pr_auc = average_precision_score(all_labels, all_preds)
     precision = precision_score(all_labels, (all_preds >= 0.5).astype(int), zero_division=0)
     recall = recall_score(all_labels, (all_preds >= 0.5).astype(int), zero_division=0)
     
-    return total_loss / len(train_loader), accuracy, auc, precision, recall
+    return total_loss / len(train_loader), accuracy, pr_auc, precision, recall
 
 
 def validate(model, val_loader, criterion, device):
@@ -94,11 +95,12 @@ def validate(model, val_loader, criterion, device):
     all_labels = np.array(all_labels).flatten()
     
     accuracy = accuracy_score(all_labels, (all_preds >= 0.5).astype(int))
-    auc = roc_auc_score(all_labels, all_preds)
+    roc_auc = roc_auc_score(all_labels, all_preds)
+    pr_auc = average_precision_score(all_labels, all_preds)
     precision = precision_score(all_labels, (all_preds >= 0.5).astype(int), zero_division=0)
     recall = recall_score(all_labels, (all_preds >= 0.5).astype(int), zero_division=0)
     
-    return total_loss / len(val_loader), accuracy, auc, precision, recall
+    return total_loss / len(val_loader), accuracy, pr_auc, precision, recall
 
 
 def full_training_pipeline():
@@ -202,52 +204,52 @@ def full_training_pipeline():
     print(f"   Weighted sampling: Normal={Config.NORMAL_WEIGHT}, Fraud={Config.FRAUD_WEIGHT}")
     
     start_time = time.time()
-    best_auc = 0
+    best_pr_auc = 0
     patience_counter = 0
     
     history = {
-        'loss': [], 'accuracy': [], 'auc': [], 'precision': [], 'recall': [],
-        'val_loss': [], 'val_accuracy': [], 'val_auc': [], 'val_precision': [], 'val_recall': []
+        'loss': [], 'accuracy': [], 'pr_auc': [], 'precision': [], 'recall': [],
+        'val_loss': [], 'val_accuracy': [], 'val_pr_auc': [], 'val_precision': [], 'val_recall': []
     }
     
     for epoch in range(Config.EPOCHS):
         # Train
-        train_loss, train_acc, train_auc, train_prec, train_rec = train_epoch(
+        train_loss, train_acc, train_pr_auc, train_prec, train_rec = train_epoch(
             model, train_loader, criterion, optimizer, device
         )
         
         # Validate
-        val_loss, val_acc, val_auc, val_prec, val_rec = validate(
+        val_loss, val_acc, val_pr_auc, val_prec, val_rec = validate(
             model, val_loader, criterion, device
         )
         
         # Save history
         history['loss'].append(train_loss)
         history['accuracy'].append(train_acc)
-        history['auc'].append(train_auc)
+        history['pr_auc'].append(train_pr_auc)
         history['precision'].append(train_prec)
         history['recall'].append(train_rec)
         history['val_loss'].append(val_loss)
         history['val_accuracy'].append(val_acc)
-        history['val_auc'].append(val_auc)
+        history['val_pr_auc'].append(val_pr_auc)
         history['val_precision'].append(val_prec)
         history['val_recall'].append(val_rec)
         
         # Print progress
         print(f"Epoch {epoch+1}/{Config.EPOCHS}")
-        print(f"  Train - Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, AUC: {train_auc:.4f}")
-        print(f"  Val   - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, AUC: {val_auc:.4f}")
+        print(f"  Train - Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, PR-AUC: {train_pr_auc:.4f}")
+        print(f"  Val   - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, PR-AUC: {val_pr_auc:.4f}")
         
         # Learning rate scheduling
-        scheduler.step(val_auc)
+        scheduler.step(val_pr_auc)
         
         # Early stopping & model checkpoint
-        if val_auc > best_auc:
-            best_auc = val_auc
+        if val_pr_auc > best_pr_auc:
+            best_pr_auc = val_pr_auc
             patience_counter = 0
             # Save best model
             save_model(model, Config.MODELS_DIR / 'fraud_model.pt')
-            print(f"  New best model saved! (AUC: {val_auc:.4f})")
+            print(f"  New best model saved! (PR-AUC: {val_pr_auc:.4f})")
         else:
             patience_counter += 1
             print(f"  No improvement ({patience_counter}/{Config.EARLY_STOPPING_PATIENCE})")
@@ -266,7 +268,7 @@ def full_training_pipeline():
     # Final validation
     print("\nSTEP 5: Final Validation")
     print("-"*60)
-    val_loss, val_acc, val_auc, val_prec, val_rec = validate(
+    val_loss, val_acc, val_pr_auc, val_prec, val_rec = validate(
         model, val_loader, criterion, device
     )
     
@@ -274,7 +276,7 @@ def full_training_pipeline():
     print(f"   Val Accuracy:  {val_acc:.4f}")
     print(f"   Val Precision: {val_prec:.4f}")
     print(f"   Val Recall:    {val_rec:.4f}")
-    print(f"   Val AUC:       {val_auc:.4f}")
+    print(f"   Val PR-AUC:    {val_pr_auc:.4f}")
     
     # 6. Save everything
     print("\nSTEP 6: Saving Artifacts")
@@ -295,7 +297,7 @@ def full_training_pipeline():
         'test_samples': len(X_test),
         'features': Config.FEATURE_COLS,
         'final_val_accuracy': val_acc,
-        'final_val_auc': val_auc,
+        'final_val_pr_auc': val_pr_auc,
         'epochs_trained': len(history['loss']),
         'training_time': training_time,
         'device': str(device)
@@ -310,7 +312,7 @@ def full_training_pipeline():
     results = {
         'val_accuracy': float(val_acc),
         'val_loss': float(val_loss),
-        'val_auc': float(val_auc),
+        'val_pr_auc': float(val_pr_auc),
         'val_precision': float(val_prec),
         'val_recall': float(val_rec),
         'history': {k: [float(x) for x in v] for k, v in history.items()},
@@ -332,7 +334,7 @@ def full_training_pipeline():
     print("="*70)
     print(f"\nFinal Validation Metrics:")
     print(f"   Accuracy:  {val_acc:.2%}")
-    print(f"   AUC:       {val_auc:.4f}")
+    print(f"   PR-AUC:    {val_pr_auc:.4f}")
     print(f"   Precision: {val_prec:.4f}")
     print(f"   Recall:    {val_rec:.4f}")
     print(f"Training Time: {training_time:.1f}s")
