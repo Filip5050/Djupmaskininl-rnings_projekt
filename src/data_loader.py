@@ -31,10 +31,9 @@ def split_train_test(df):
     train_df, test_df = train_test_split(
         df, 
         test_size=Config.TEST_SIZE,
-        random_state=Config.RANDOM_STATE,
+        random_state=Config.SEED,
         stratify=df[Config.TARGET_COL]
     )
-    
     print(f"Train: {len(train_df):,} | Test: {len(test_df):,}")
     
     return train_df, test_df

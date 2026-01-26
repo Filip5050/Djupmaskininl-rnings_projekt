@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import joblib
 from sklearn.preprocessing import RobustScaler
-from imblearn.over_sampling import SMOTE
 from src.config import Config
 
 
@@ -17,7 +16,7 @@ class FraudPreprocessor:
         self.scaler = RobustScaler()
         self.feature_cols_to_scale = [0, 29]  # Time (index 0) and Amount (index 29)
         
-    def fit_transform(self, X, y, use_smote=False):
+    def fit_transform(self, X, y):
         """Fit and transform training data"""
         print("\nPreprocessing fraud data...")
         
@@ -32,13 +31,6 @@ class FraudPreprocessor:
         time_amount = X[:, self.feature_cols_to_scale]
         self.scaler.fit(time_amount)
         X[:, self.feature_cols_to_scale] = self.scaler.transform(time_amount)
-        
-        # Apply SMOTE if requested
-        if use_smote and Config.USE_SMOTE:
-            print("  Applying SMOTE...")
-            smote = SMOTE(random_state=Config.RANDOM_STATE)
-            X, y = smote.fit_resample(X, y)
-            print(f"  After SMOTE: {len(X):,} samples")
         
         return X, y
     

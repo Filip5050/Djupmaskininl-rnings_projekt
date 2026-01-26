@@ -2,6 +2,7 @@
 Model training pipeline for fraud detection with PyTorch
 """
 import time
+import random
 import joblib
 import numpy as np
 import torch
@@ -106,9 +107,19 @@ def full_training_pipeline():
     print("CREDIT CARD FRAUD DETECTION - PYTORCH TRAINING PIPELINE")
     print("="*70)
     
+    # Fix random seeds for reproducibility
+    torch.manual_seed(Config.SEED)
+    np.random.seed(Config.SEED)
+    random.seed(Config.SEED)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(Config.SEED)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+    print(f"Random seed fixed: {Config.SEED} (for reproducibility)")
+    
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"\nDevice: {device}")
+    print(f"Device: {device}")
     
     # Setup directories
     Config.setup_directories()
@@ -127,16 +138,16 @@ def full_training_pipeline():
     print("\nSTEP 2: Preprocessing Data")
     print("-"*60)
     preprocessor = FraudPreprocessor()
-    X_train_scaled, y_train_scaled = preprocessor.fit_transform(X_train_full, y_train_full, use_smote=True)
+    X_train_scaled, y_train_scaled = preprocessor.fit_transform(X_train_full, y_train_full)
     
-    # Preprocess test data (no SMOTE, just scaling)
+    # Preprocess test data (just scaling)
     X_test_scaled = preprocessor.transform(X_test)
     
     # Split train into train/val (from SMOTE-balanced data)
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_scaled, y_train_scaled,
         test_size=0.2,
-        random_state=Config.RANDOM_STATE,
+        random_state=Config.SEED,
         stratify=y_train_scaled
     )
     
@@ -287,7 +298,6 @@ def full_training_pipeline():
         'final_val_auc': val_auc,
         'epochs_trained': len(history['loss']),
         'training_time': training_time,
-        'used_smote': Config.USE_SMOTE,
         'device': str(device)
     }
     joblib.dump(metadata, Config.MODELS_DIR / 'model_metadata.pkl')

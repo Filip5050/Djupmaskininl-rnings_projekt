@@ -4,7 +4,11 @@ Deep learning-based system for credit card fraud detection using PyTorch.
 
 ## Overview
 
-This project uses a 4-layer neural network with Focal Loss to handle extremely imbalanced data (0.173% fraud rate). The system achieves aroudn 92% recall and AUC around 0.97 on test data.
+This project uses a 4-layer neural network with Focal Loss to handle extremely imbalanced data (0.173% fraud rate). The system achieves:
+- **92% fraud recall** (catches 9 out of 10 frauds)
+- **AUC 0.975** (excellent separation)
+- **Lift 30x** (30 times better than random guessing)
+- **Flagging rate 3%** (reviews only top 3% of transactions)
 
 
 ## Dataset
@@ -61,11 +65,15 @@ python main.py evaluate
 ```
 
 Generates:
-- Confusion matrix
-- ROC curve
-- Precision-Recall curve
-- Probability distribution
-- Saves visualization: `fraud_evaluation.png`
+- **Classification metrics**: Accuracy, AUC, Precision, Recall
+- **Industry metrics**: Lift, Fraud Positive Rate, Flagging Rate
+- **Feature importance**: Top 10 most important features (permutation-based)
+- **Visualizations**: 
+  - Confusion matrix
+  - ROC curve
+  - Precision-Recall curve
+  - Probability distribution
+- Saves: `fraud_evaluation.png` and `feature_importance.png`
 
 ### Launch web app
 ```bash
@@ -90,17 +98,18 @@ Opens Streamlit dashboard at http://localhost:8501 with:
 - **Loss Function**: Focal Loss (alpha=0.25, gamma=2.0)
 - **Optimizer**: Adam (lr=0.0005)
 - **Batch Size**: 256
+- **Seed**: 42 
 - **Class Weights**: fraud=900, normal=1 (WeightedRandomSampler)
 - **Early Stopping**: Patience=8
 - **LR Scheduler**: ReduceLROnPlateau (patience=3)
 
 ### Preprocessing
-- **Scaler**: RobustScaler (Time + Amount only)
-- **Features**: V1-V28 already PCA-transformed
-- **SMOTE**: Disabled (creates unrealistic patterns)
+- **Scaler**: RobustScaler
+- **Features**: V1-V28 already PCA-transformed 
+- **Imbalance Handling**: WeightedRandomSampler
 
 ### Classification
-- **Threshold**: 0.40 (optimized for high recall)
+- **Threshold**: 0.5
 
 ## Project Structure
 

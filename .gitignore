@@ -1,4 +1,4 @@
-# Python
+
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,28 +12,27 @@ ENV/
 dist/
 build/
 
-# Jupyter Notebook
+
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
 
-# IDE
-.vscode/
+
 .idea/
 *.swp
 *.swo
 
-# Data files (too large for GitHub)
+
 data/fraud_detection/creditcard.csv
 
-# Model files (optional - can be regenerated)
+
 models/saved_models/*.pt
 models/saved_models/*.pkl
 models/saved_models/*.png
 
-# Logs
+
 logs/
 *.log
 
-# OS
+
 .DS_Store
 Thumbs.db

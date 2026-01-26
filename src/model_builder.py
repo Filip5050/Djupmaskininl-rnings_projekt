@@ -26,13 +26,8 @@ class FocalLoss(nn.Module):
         self.gamma = gamma
     
     def forward(self, inputs, targets):
-        # BCE loss
         bce_loss = F.binary_cross_entropy(inputs, targets, reduction='none')
-        
-        # Probability of correct class
         pt = torch.exp(-bce_loss)
-        
-        # Focal loss formula
         focal_loss = self.alpha * (1 - pt) ** self.gamma * bce_loss
         
         return focal_loss.mean()
@@ -66,7 +61,6 @@ class FraudDetector(nn.Module):
         # Output layer: binary classification
         self.fc5 = nn.Linear(Config.LAYER_SIZES[3], 1)
         
-        # Activation functions
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         
@@ -76,24 +70,20 @@ class FraudDetector(nn.Module):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.dropout1(x)
-        
         # Layer 2
         x = self.fc2(x)
         x = self.bn2(x)
         x = self.relu(x)
         x = self.dropout2(x)
-        
         # Layer 3
         x = self.fc3(x)
         x = self.bn3(x)  # Batch norm added
         x = self.relu(x)
         x = self.dropout3(x)
-        
         # Layer 4
         x = self.fc4(x)
         x = self.relu(x)
         x = self.dropout4(x)
-        
         # Output
         x = self.fc5(x)
         x = self.sigmoid(x)
@@ -103,14 +93,14 @@ class FraudDetector(nn.Module):
 
 def build_fraud_classifier(input_dim: int) -> FraudDetector:
     """Build a deep neural network for fraud detection"""
-    print("\n🏗️  Building PyTorch Fraud Detection Model...")
+    print("\nBuilding PyTorch Fraud Detection Model...")
     
     model = FraudDetector(input_dim)
     
     # Print model architecture
-    print("✅ Model built successfully")
+    print("Model built successfully")
     print(f"   Architecture: {' → '.join(map(str, Config.LAYER_SIZES))} → 1")
-    print(f"\n📊 Model Summary:")
+    print(f"\nModel Summary:")
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"   Total parameters: {total_params:,}")
@@ -128,17 +118,17 @@ def save_model(model: FraudDetector, path: Path):
             'dropout_rates': Config.DROPOUT_RATES
         }
     }, path)
-    print(f"✅ Model saved to: {path}")
+    print(f"Model saved to: {path}")
 
 
 def load_model(path: Path, input_dim: int) -> FraudDetector:
     """Load PyTorch model"""
-    print(f"📂 Loading model from: {path}")
+    print(f"Loading model from: {path}")
     
     model = FraudDetector(input_dim)
     checkpoint = torch.load(path)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     
-    print("✅ Model loaded")
+    print("Model loaded")
     return model

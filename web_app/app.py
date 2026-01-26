@@ -201,9 +201,10 @@ with tab1:
         # Confusion Matrix from Test Data
         st.subheader("Confusion Matrix (Test Set)")
         
-        # Fixed threshold at optimal value for high recall
-        threshold = 0.4
-        st.info("**Classification Threshold: 0.4** (Optimized for high recall - catch more fraud cases)")
+        # Fixed threshold at optimal value for balanced performance
+        from src.config import Config
+        threshold = Config.THRESHOLD
+        st.info(f"**Classification Threshold: {Config.THRESHOLD}** (Balanced approach - industry standard)")
         
         try:
             import joblib
@@ -417,9 +418,10 @@ with tab2:
         if transaction is not None:
             # Key fraud indicators explanation
             st.info("""
-            🔍 **Key Fraud Indicators:**
-            - **V14** (Most important): Normal transactions ≈ 0, Fraud transactions < -6 (highly negative values indicate fraud)
-            - **V10** (Second most important): Normal transactions ≈ 0, Fraud transactions < -5 (negative extremes suggest fraudulent patterns)
+            🔍 **Key Fraud Indicators (Based on Feature Importance Analysis):**
+            - **V14** (Most important, 2.58% AUC contribution): Normal ≈ 0, Fraud < -6 (highly negative values indicate fraud)
+            - **V4** (Second most important, 1.11% AUC contribution): Normal ≈ 0, Fraud shows extreme deviations
+            - **V8** (Third most important, 1.00% AUC contribution): Normal ≈ 0, Fraud displays unusual patterns
             
             These PCA-transformed features capture hidden patterns in transaction behavior that are strong predictors of fraud.
             """)
@@ -429,19 +431,22 @@ with tab2:
                 st.metric("Time (seconds since start)", f"{transaction[0][0]:.0f}s")
                 st.metric("Amount", f"${transaction[0][29]:.2f}")
             with col2:
-                # V10 is at index 10 (Time=0, V1=1, V2=2, ..., V10=10)
-                v10_value = transaction[0][10]
-                st.metric("V10 (Fraud Indicator)", f"{v10_value:.3f}", 
-                         delta="Suspicious" if v10_value < -5 else "Normal",
-                         delta_color="inverse" if v10_value < -5 else "normal")
-                # V14 is at index 14
+                # V14 is at index 14 (Time=0, V1=1, V2=2, ..., V14=14)
                 v14_value = transaction[0][14]
                 st.metric("V14 (Strongest Indicator)", f"{v14_value:.3f}",
                          delta="High Risk" if v14_value < -6 else "Normal",
                          delta_color="inverse" if v14_value < -6 else "normal")
+                # V4 is at index 4
+                v4_value = transaction[0][4]
+                st.metric("V4 (2nd Strongest)", f"{v4_value:.3f}",
+                         delta="Suspicious" if abs(v4_value) > 3 else "Normal",
+                         delta_color="inverse" if abs(v4_value) > 3 else "normal")
             with col3:
-                if actual_label is not None:
-                    st.metric("Actual Label", "FRAUD" if actual_label == 1 else "LEGITIMATE")
+                # V8 is at index 8
+                v8_value = transaction[0][8]
+                st.metric("V8 (3rd Strongest)", f"{v8_value:.3f}",
+                         delta="Anomaly" if abs(v8_value) > 2 else "Normal",
+                         delta_color="inverse" if abs(v8_value) > 2 else "normal")
             
             # Predict button
             if st.button("🔍 Check for Fraud", type="primary", use_container_width=True):
@@ -518,7 +523,7 @@ with tab2:
                                 title={'text': "Fraud Probability", 'font': {'size': 24}},
                                 gauge={
                                     'axis': {'range': [0, 100], 'tickwidth': 2},
-                                    'bar': {'color': "darkred" if current_value > 40 else "darkgreen", 'thickness': 0.7},
+                                    'bar': {'color': "darkred" if current_value > 50 else "darkgreen", 'thickness': 0.7},
                                     'steps': [
                                         {'range': [0, 25], 'color': "rgba(144, 238, 144, 0.3)"},
                                         {'range': [25, 60], 'color': "rgba(255, 255, 0, 0.3)"},
@@ -527,7 +532,7 @@ with tab2:
                                     'threshold': {
                                         'line': {'color': "red", 'width': 4},
                                         'thickness': 0.75,
-                                        'value': 40
+                                        'value': Config.THRESHOLD * 100
                                     }
                                 }
                             ))
@@ -539,7 +544,7 @@ with tab2:
                             time.sleep(0.05)  # 1 second total animation
                         
                         # Result
-                        predicted_class = 1 if fraud_probability > 0.4 else 0
+                        predicted_class = 1 if fraud_probability > 0.5 else 0
                         
                         st.write("---")
                         col1, col2 = st.columns(2)
