@@ -1,6 +1,3 @@
-"""
-Model evaluation on test data for fraud detection with PyTorch
-"""
 import numpy as np
 import pandas as pd
 import torch
@@ -34,7 +31,7 @@ def calculate_feature_importance(model, X_test, y_test, feature_names, device, n
     """
     print("\nCalculating feature importance (this may take a minute)...")
     
-    # Get baseline AUC
+
     model.eval()
     with torch.no_grad():
         X_tensor = torch.FloatTensor(X_test).to(device)
@@ -47,17 +44,14 @@ def calculate_feature_importance(model, X_test, y_test, feature_names, device, n
         importance_scores = []
         
         for _ in range(n_repeats):
-            # Create a copy and shuffle this feature
             X_permuted = X_test.copy()
             np.random.shuffle(X_permuted[:, feature_idx])
             
-            # Get new AUC
             with torch.no_grad():
                 X_tensor_perm = torch.FloatTensor(X_permuted).to(device)
                 y_pred_perm = model(X_tensor_perm).cpu().numpy().flatten()
                 permuted_auc = roc_auc_score(y_test, y_pred_perm)
             
-            # Importance = drop in AUC
             importance_scores.append(baseline_auc - permuted_auc)
         
         importances.append({
@@ -71,12 +65,10 @@ def calculate_feature_importance(model, X_test, y_test, feature_names, device, n
     
     return importance_df
 
-
 def full_evaluation_pipeline():
-    """Execute complete fraud detection evaluation pipeline"""
-    print("\n" + "="*70)
+    print("\n")
     print("CREDIT CARD FRAUD DETECTION - PYTORCH EVALUATION")
-    print("="*70)
+
     
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -84,21 +76,18 @@ def full_evaluation_pipeline():
     
   
     print("\nSTEP 1: Loading Test Data")
-    print("-"*60)
     X_test, y_test = joblib.load(Config.MODELS_DIR / 'test_data.pkl')
     print(f"Loaded {len(X_test):,} test samples")
     fraud_count = y_test.sum()
     print(f"   Normal: {len(y_test) - fraud_count:,} | Fraud: {fraud_count:,}")
 
     print("\nSTEP 2: Loading Model & Preprocessor")
-    print("-"*60)
     preprocessor = FraudPreprocessor.load(Config.MODELS_DIR)
     model = load_model(Config.MODELS_DIR / 'fraud_model.pt', X_test.shape[1])
     model = model.to(device)
     model.eval()
     
     print("\nSTEP 3: Making Predictions")
-    print("-"*60)
     
     X_test_tensor = torch.FloatTensor(X_test).to(device)
     
@@ -117,17 +106,17 @@ def full_evaluation_pipeline():
     print(f"Predictions complete (threshold: 0.5)")
     
     print("\nSTEP 4: Calculating Metrics")
-    print("-"*60)
     
     accuracy = accuracy_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_pred_proba)
+    roc_auc = roc_auc_score(y_test, y_pred_proba)
+    pr_auc = average_precision_score(y_test, y_pred_proba)
     
     print(f"\nTest Metrics:")
-    print(f"   Accuracy: {accuracy:.4f}")
-    print(f"   AUC:      {auc:.4f}")
+    print(f"   Accuracy:  {accuracy:.4f}")
+    print(f"   ROC-AUC:   {roc_auc:.4f}")
+    print(f"   PR-AUC:    {pr_auc:.4f} (primary metric for imbalanced data)")
     
     print("\nClassification Report:")
-    print("-"*60)
     print(classification_report(
         y_test, y_pred,
         target_names=['Normal', 'Fraud'],
@@ -135,7 +124,6 @@ def full_evaluation_pipeline():
     ))
     
     print("\nConfusion Matrix:")
-    print("-"*60)
     cm = confusion_matrix(y_test, y_pred)
     tn, fp, fn, tp = cm.ravel()
     
@@ -145,7 +133,6 @@ def full_evaluation_pipeline():
     print(f"True Positives:  {tp:,}")
     
     print("\nAdvanced Fraud Detection Metrics:")
-    print("-"*60)
     
     overall_fraud_rate = fraud_count / len(y_test)
     
@@ -170,24 +157,24 @@ def full_evaluation_pipeline():
     print(f"Fraud Capture Rate:        {tp/fraud_count*100:.2f}% ({tp}/{fraud_count} frauds caught)")
     
     print("\nInterpretation (Industry Standards):")
-    print("-"*60)
+
     if lift > 15:
-        print(f"✓ Lift {lift:.1f}x is EXCELLENT (>8 is considered strong)")
+        print(f"Lift {lift:.1f}x is EXCELLENT (>8 is considered strong)")
     elif lift > 8:
-        print(f"✓ Lift {lift:.1f}x is STRONG (>8 is considered strong)")
+        print(f"Lift {lift:.1f}x is STRONG (>8 is considered strong)")
     else:
-        print(f"⚠ Lift {lift:.1f}x could be improved (target >8)")
+        print(f"Lift {lift:.1f}x could be improved (target >8)")
     
     if flagging_rate <= 0.05:
-        print(f"✓ Flagging rate {flagging_rate*100:.1f}% matches 'Top 5%' industry approach")
+        print(f"Flagging rate {flagging_rate*100:.1f}% matches 'Top 5%' industry approach")
     elif flagging_rate <= 0.02:
-        print(f"✓ Flagging rate {flagging_rate*100:.1f}% is conservative (Top 2%)")
+        print(f"Flagging rate {flagging_rate*100:.1f}% is conservative (Top 2%)")
     else:
-        print(f"⚠ Flagging rate {flagging_rate*100:.1f}% is high (consider raising threshold)")
+        print(f"Flagging rate {flagging_rate*100:.1f}% is high (consider raising threshold)")
     
-    # 7. Visualizations
+
     print("\nSTEP 5: Creating Visualizations")
-    print("-"*60)
+
     
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     
@@ -201,9 +188,8 @@ def full_evaluation_pipeline():
     axes[0, 0].set_ylabel('True Label')
     axes[0, 0].set_xlabel('Predicted Label')
     
-    # ROC Curve
     fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-    axes[0, 1].plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC (AUC = {auc:.4f})')
+    axes[0, 1].plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC (AUC = {roc_auc:.4f})')
     axes[0, 1].plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random')
     axes[0, 1].set_xlim([0.0, 1.0])
     axes[0, 1].set_ylim([0.0, 1.05])
@@ -212,8 +198,7 @@ def full_evaluation_pipeline():
     axes[0, 1].set_title('ROC Curve', fontsize=14, fontweight='bold')
     axes[0, 1].legend(loc="lower right")
     axes[0, 1].grid(alpha=0.3)
-    
-    # Precision-Recall Curve
+
     precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
     avg_precision = average_precision_score(y_test, y_pred_proba)
     axes[1, 0].plot(recall, precision, color='blue', lw=2, label=f'AP = {avg_precision:.4f}')
@@ -223,7 +208,6 @@ def full_evaluation_pipeline():
     axes[1, 0].legend(loc="upper right")
     axes[1, 0].grid(alpha=0.3)
     
-    # Prediction Distribution
     axes[1, 1].hist(y_pred_proba[y_test == 0], bins=50, alpha=0.7, label='Normal', color='green')
     axes[1, 1].hist(y_pred_proba[y_test == 1], bins=50, alpha=0.7, label='Fraud', color='red')
     axes[1, 1].axvline(x=Config.THRESHOLD, color='black', linestyle='--', label='Threshold')
@@ -272,7 +256,8 @@ def full_evaluation_pipeline():
     
     results = {
         'accuracy': accuracy,
-        'auc': auc,
+        'roc_auc': roc_auc,
+        'pr_auc': pr_auc,
         'confusion_matrix': cm,
         'classification_report': classification_report(y_test, y_pred, target_names=['Normal', 'Fraud'], output_dict=True),
         'feature_importance': importance_df.to_dict(),
@@ -287,12 +272,11 @@ def full_evaluation_pipeline():
     joblib.dump(results, Config.MODELS_DIR / 'evaluation_results.pkl')
     print(f"Results saved")
     
-    print("\n" + "="*70)
     print("EVALUATION COMPLETE!")
-    print("="*70)
     print(f"\nFinal Test Metrics:")
     print(f"   Accuracy:               {accuracy:.4f}")
-    print(f"   AUC:                    {auc:.4f}")
+    print(f"   ROC-AUC:                {roc_auc:.4f}")
+    print(f"   PR-AUC:                 {pr_auc:.4f}")
     print(f"   Fraud Detected:         {tp}/{fraud_count} ({tp/fraud_count:.2%})")
     print(f"   Lift:                   {lift:.1f}x")
     print(f"   Fraud Positive Rate:    {fraud_positive_rate*100:.2f}%")

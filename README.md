@@ -5,10 +5,22 @@ Deep learning-based system for credit card fraud detection using PyTorch.
 ## Overview
 
 This project uses a 4-layer neural network with Focal Loss to handle extremely imbalanced data (0.173% fraud rate). The system achieves:
-- **92% fraud recall** (catches 9 out of 10 frauds)
-- **AUC 0.975** (excellent separation)
-- **Lift 30x** (30 times better than random guessing)
-- **Flagging rate 3%** (reviews only top 3% of transactions)
+- **89% fraud recall** (catches 9 out of 10 frauds)
+- **PR-AUC 0.805** (primary metric for imbalanced data)
+- **ROC-AUC 0.974** (excellent separation)
+- **Lift 80x** (80 times better than random guessing)
+- **Flagging rate 1.1%** (reviews only top 1% of transactions)
+- **Precision 13.7%** (among flagged transactions)
+
+### Why PR-AUC over ROC-AUC?
+
+For highly imbalanced fraud detection (0.17% fraud rate), **Precision-Recall AUC (PR-AUC)** is superior to ROC-AUC:
+- **PR-AUC** focuses on precision among flagged transactions (what fraud teams care about)
+- **ROC-AUC** can be misleading with severe class imbalance (99.83% normal)
+- Using PR-AUC for model selection resulted in:
+  - 2.6x higher Lift (80x vs 30x)
+  - 64% fewer false positives (546 vs 1,656)
+  - 167% higher precision among flagged (13.7% vs 5.2%)
 
 
 ## Dataset
@@ -65,13 +77,13 @@ python main.py evaluate
 ```
 
 Generates:
-- **Classification metrics**: Accuracy, AUC, Precision, Recall
+- **Classification metrics**: Accuracy, ROC-AUC, PR-AUC (primary), Precision, Recall
 - **Industry metrics**: Lift, Fraud Positive Rate, Flagging Rate
 - **Feature importance**: Top 10 most important features (permutation-based)
 - **Visualizations**: 
   - Confusion matrix
-  - ROC curve
-  - Precision-Recall curve
+  - ROC curve (ROC-AUC)
+  - Precision-Recall curve (PR-AUC)
   - Probability distribution
 - Saves: `fraud_evaluation.png` and `feature_importance.png`
 
@@ -83,7 +95,6 @@ python main.py webapp
 Opens Streamlit dashboard at http://localhost:8501 with:
 - **Overview**: Training metrics, confusion matrix, business impact
 - **Fraud Detection**: Test individual transactions
-- **About**: Project information
 
 ## Architecture
 
@@ -98,9 +109,9 @@ Opens Streamlit dashboard at http://localhost:8501 with:
 - **Loss Function**: Focal Loss (alpha=0.25, gamma=2.0)
 - **Optimizer**: Adam (lr=0.0005)
 - **Batch Size**: 256
-- **Seed**: 42 
+- **Seed**: 42
 - **Class Weights**: fraud=900, normal=1 (WeightedRandomSampler)
-- **Early Stopping**: Patience=8
+- **Early Stopping**: Based on validation PR-AUC (patience=8)
 - **LR Scheduler**: ReduceLROnPlateau (patience=3)
 
 ### Preprocessing
