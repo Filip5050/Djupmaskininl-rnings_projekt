@@ -1,6 +1,4 @@
-"""
-Model training pipeline for fraud detection with PyTorch
-"""
+
 import time
 import random
 import joblib
@@ -19,7 +17,6 @@ from src.model_builder import build_fraud_classifier, save_model
 
 
 def create_data_loader(X, y, batch_size, class_weights=None, shuffle=True):
-    """Create PyTorch DataLoader with optional weighted sampling"""
     X_tensor = torch.FloatTensor(X)
     y_tensor = torch.FloatTensor(y).reshape(-1, 1)
     
@@ -37,7 +34,6 @@ def create_data_loader(X, y, batch_size, class_weights=None, shuffle=True):
 
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
-    """Train for one epoch"""
     model.train()
     total_loss = 0
     all_preds = []
@@ -46,12 +42,10 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     for batch_X, batch_y in train_loader:
         batch_X, batch_y = batch_X.to(device), batch_y.to(device)
         
-        # Forward pass
         optimizer.zero_grad()
         outputs = model(batch_X)
         loss = criterion(outputs, batch_y)
         
-        # Backward pass
         loss.backward()
         optimizer.step()
         
@@ -73,7 +67,6 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
 
 
 def validate(model, val_loader, criterion, device):
-    """Validate the model"""
     model.eval()
     total_loss = 0
     all_preds = []
@@ -104,12 +97,10 @@ def validate(model, val_loader, criterion, device):
 
 
 def full_training_pipeline():
-    """Execute the complete fraud detection training pipeline"""
     print("\n" + "="*70)
     print("CREDIT CARD FRAUD DETECTION - PYTORCH TRAINING PIPELINE")
     print("="*70)
     
-    # Fix random seeds for reproducibility
     torch.manual_seed(Config.SEED)
     np.random.seed(Config.SEED)
     random.seed(Config.SEED)
@@ -117,35 +108,24 @@ def full_training_pipeline():
         torch.cuda.manual_seed(Config.SEED)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-    print(f"Random seed fixed: {Config.SEED} (for reproducibility)")
     
-    # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}")
-    
-    # Setup directories
     Config.setup_directories()
-    
-    # 1. Load data
     print("\nSTEP 1: Loading Data")
-    print("-"*60)
     df = load_fraud_data()
     
-    # Split train/test
     train_df, test_df = split_train_test(df)
     X_train_full, y_train_full = split_features_target(train_df)
     X_test, y_test = split_features_target(test_df)
     
-    # 2. Preprocess data
     print("\nSTEP 2: Preprocessing Data")
-    print("-"*60)
     preprocessor = FraudPreprocessor()
     X_train_scaled, y_train_scaled = preprocessor.fit_transform(X_train_full, y_train_full)
     
-    # Preprocess test data (just scaling)
+
     X_test_scaled = preprocessor.transform(X_test)
     
-    # Split train into train/val (from SMOTE-balanced data)
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_scaled, y_train_scaled,
         test_size=0.2,
@@ -154,13 +134,8 @@ def full_training_pipeline():
     )
     
     print(f"\nFinal dataset sizes:")
-    print(f"   Train: {len(X_train):,} | Val: {len(X_val):,} | Test: {len(X_test_scaled):,}")
-    
-    # 3. Create data loaders
+    print(f"Train: {len(X_train):,} | Val: {len(X_val):,} | Test: {len(X_test_scaled):,}")
     print("\nSTEP 3: Creating DataLoaders")
-    print("-"*60)
-    
-    # Class weights for weighted sampling
     class_weights = {0: Config.NORMAL_WEIGHT, 1: Config.FRAUD_WEIGHT}
     
     train_loader = create_data_loader(
@@ -179,51 +154,39 @@ def full_training_pipeline():
     print(f"   Train batches: {len(train_loader)}")
     print(f"   Val batches: {len(val_loader)}")
     
-    # 4. Build model
     print("\nSTEP 4: Building & Training Model")
-    print("-"*60)
     model = build_fraud_classifier(X_train.shape[1])
     model = model.to(device)
     
-    # Use Focal Loss for better handling of imbalanced data
     from src.model_builder import FocalLoss
     criterion = FocalLoss(alpha=0.25, gamma=2.0)
     print("Using Focal Loss (alpha=0.25, gamma=2.0) for imbalanced data")
     
-    # Optimizer
     optimizer = optim.Adam(model.parameters(), lr=Config.LEARNING_RATE)
     
-    # Learning rate scheduler
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode='max', factor=0.5, patience=3
     )
-    
-    # Training loop
     print("\nStarting training...")
     print(f"   Architecture: {' -> '.join(map(str, Config.LAYER_SIZES))} -> 1")
     print(f"   Weighted sampling: Normal={Config.NORMAL_WEIGHT}, Fraud={Config.FRAUD_WEIGHT}")
-    
     start_time = time.time()
     best_pr_auc = 0
     patience_counter = 0
-    
     history = {
         'loss': [], 'accuracy': [], 'pr_auc': [], 'precision': [], 'recall': [],
         'val_loss': [], 'val_accuracy': [], 'val_pr_auc': [], 'val_precision': [], 'val_recall': []
     }
     
     for epoch in range(Config.EPOCHS):
-        # Train
         train_loss, train_acc, train_pr_auc, train_prec, train_rec = train_epoch(
             model, train_loader, criterion, optimizer, device
         )
         
-        # Validate
         val_loss, val_acc, val_pr_auc, val_prec, val_rec = validate(
             model, val_loader, criterion, device
         )
         
-        # Save history
         history['loss'].append(train_loss)
         history['accuracy'].append(train_acc)
         history['pr_auc'].append(train_pr_auc)
@@ -235,19 +198,15 @@ def full_training_pipeline():
         history['val_precision'].append(val_prec)
         history['val_recall'].append(val_rec)
         
-        # Print progress
         print(f"Epoch {epoch+1}/{Config.EPOCHS}")
         print(f"  Train - Loss: {train_loss:.4f}, Acc: {train_acc:.4f}, PR-AUC: {train_pr_auc:.4f}")
         print(f"  Val   - Loss: {val_loss:.4f}, Acc: {val_acc:.4f}, PR-AUC: {val_pr_auc:.4f}")
         
-        # Learning rate scheduling
         scheduler.step(val_pr_auc)
         
-        # Early stopping & model checkpoint
         if val_pr_auc > best_pr_auc:
             best_pr_auc = val_pr_auc
             patience_counter = 0
-            # Save best model
             save_model(model, Config.MODELS_DIR / 'fraud_model.pt')
             print(f"  New best model saved! (PR-AUC: {val_pr_auc:.4f})")
         else:
@@ -260,14 +219,11 @@ def full_training_pipeline():
     
     training_time = time.time() - start_time
     
-    # Load best model
     from src.model_builder import load_model
     model = load_model(Config.MODELS_DIR / 'fraud_model.pt', X_train.shape[1])
     model = model.to(device)
     
-    # Final validation
     print("\nSTEP 5: Final Validation")
-    print("-"*60)
     val_loss, val_acc, val_pr_auc, val_prec, val_rec = validate(
         model, val_loader, criterion, device
     )
@@ -277,19 +233,12 @@ def full_training_pipeline():
     print(f"   Val Precision: {val_prec:.4f}")
     print(f"   Val Recall:    {val_rec:.4f}")
     print(f"   Val PR-AUC:    {val_pr_auc:.4f}")
-    
-    # 6. Save everything
-    print("\nSTEP 6: Saving Artifacts")
-    print("-"*60)
-    
-    # Save preprocessor
+    print("\nSTEP 6: Saving")
     preprocessor.save(Config.MODELS_DIR)
     
-    # Save test data for later evaluation (PREPROCESSED!)
     joblib.dump((X_test_scaled, y_test.values), Config.MODELS_DIR / 'test_data.pkl')
     print("Test data saved")
     
-    # Save metadata
     metadata = {
         'model_type': 'PyTorch Fraud Detection Neural Network',
         'train_samples': len(X_train),
@@ -304,8 +253,6 @@ def full_training_pipeline():
     }
     joblib.dump(metadata, Config.MODELS_DIR / 'model_metadata.pkl')
     print("Metadata saved")
-    
-    # Save training results for dashboard
     fraud_count_train = y_train.sum()
     normal_count_train = len(y_train) - fraud_count_train
     
@@ -329,9 +276,7 @@ def full_training_pipeline():
     joblib.dump(results, Config.MODELS_DIR / 'training_results.pkl')
     print("Training results saved")
     
-    print("\n" + "="*70)
-    print("TRAINING COMPLETE!")
-    print("="*70)
+    print("Training Done!")
     print(f"\nFinal Validation Metrics:")
     print(f"   Accuracy:  {val_acc:.2%}")
     print(f"   PR-AUC:    {val_pr_auc:.4f}")

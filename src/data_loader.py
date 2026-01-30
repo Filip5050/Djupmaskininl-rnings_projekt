@@ -7,7 +7,6 @@ from src.config import Config
 
 
 def load_fraud_data():
-    """Load credit card fraud dataset"""
     print(f"Loading fraud data from: {Config.DATA_FILE}")
     df = pd.read_csv(Config.DATA_FILE)
     
@@ -26,7 +25,6 @@ def load_fraud_data():
 
 
 def split_train_test(df):
-    """Split data into train and test sets"""
     print("\nSplitting data...")
     train_df, test_df = train_test_split(
         df, 
@@ -40,7 +38,6 @@ def split_train_test(df):
 
 
 def split_features_target(df):
-    """Split features and target"""
     X = df[Config.FEATURE_COLS]
     y = df[Config.TARGET_COL]
     

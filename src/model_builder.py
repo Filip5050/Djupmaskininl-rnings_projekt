@@ -1,6 +1,3 @@
-"""
-PyTorch Neural Network model builder for fraud detection
-"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -34,7 +31,6 @@ class FocalLoss(nn.Module):
 
 
 class FraudDetector(nn.Module):
-    """Deep Neural Network for fraud detection (binary classification)"""
     
     def __init__(self, input_dim: int):
         super(FraudDetector, self).__init__()
@@ -77,7 +73,7 @@ class FraudDetector(nn.Module):
         x = self.dropout2(x)
         # Layer 3
         x = self.fc3(x)
-        x = self.bn3(x)  # Batch norm added
+        x = self.bn3(x)  
         x = self.relu(x)
         x = self.dropout3(x)
         # Layer 4
@@ -110,7 +106,6 @@ def build_fraud_classifier(input_dim: int) -> FraudDetector:
 
 
 def save_model(model: FraudDetector, path: Path):
-    """Save PyTorch model"""
     torch.save({
         'model_state_dict': model.state_dict(),
         'architecture': {
@@ -122,7 +117,6 @@ def save_model(model: FraudDetector, path: Path):
 
 
 def load_model(path: Path, input_dim: int) -> FraudDetector:
-    """Load PyTorch model"""
     print(f"Loading model from: {path}")
     
     model = FraudDetector(input_dim)

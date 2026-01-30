@@ -87,7 +87,7 @@ if results:
     st.sidebar.metric("Training Time", results.get('training_time', 'N/A'))
 
 
-tab1, tab2, tab3 = st.tabs(["Overview", "Fraud Detection", "About"])
+tab1, tab2= st.tabs(["Overview", "Fraud Detection"])
 
 with tab1:
     st.header("Training Overview")
@@ -234,7 +234,6 @@ with tab1:
         # Confusion Matrix from Test Data
         st.subheader("Confusion Matrix (Test Set)")
         
-        # Fixed threshold at optimal value for balanced performance
         from src.config import Config
         threshold = Config.THRESHOLD
         
@@ -588,85 +587,3 @@ with tab2:
         else:
             st.info("Click a button above to load a transaction, or enter values manually below")
         
-
-# Tab 3: About
-with tab3:
-    st.header("About This System")
-    
-    st.markdown("""
-    ### Credit Card Fraud Detection System
-    
-    **Overview:**
-    This system uses deep learning to detect fraudulent credit card transactions in real-time, achieving **80x better detection** than random sampling.
-    
-    **Key Performance Metrics:**
-    - **PR-AUC**: 0.805 (Primary metric for imbalanced data)
-    - **ROC-AUC**: 0.974
-    - **Lift**: 79.9x (80x better than random)
-    - **Recall**: 88.78% (catches most fraud)
-    - **Precision**: 13.74% (of flagged transactions)
-    - **Flagging Rate**: 1.11% (546 false positives vs 1,656 baseline)
-    
-    **Dataset:**
-    - **Features**: 30 features (Time, V1-V28 PCA components, Amount)
-    - **Target**: Class (0=Normal, 1=Fraud)
-    - **Challenge**: Highly imbalanced (~0.17% fraud rate)
-    - **Source**: Kaggle Credit Card Fraud Detection (284,807 transactions)
-    
-    **Model Architecture:**
-    ```
-    Input (30 features)
-       ↓
-    Dense(128) + BatchNorm + ReLU + Dropout(0.4)
-       ↓
-    Dense(64) + BatchNorm + ReLU + Dropout(0.35)
-       ↓
-    Dense(32) + BatchNorm + ReLU + Dropout(0.3)
-       ↓
-    Dense(16) + BatchNorm + ReLU + Dropout(0.25)
-       ↓
-    Dense(1, sigmoid) → Fraud Probability
-    ```
-    
-    **Techniques Used:**
-    - **Focal Loss**: alpha=0.25, gamma=2.0 (handles class imbalance)
-    - **WeightedRandomSampler**: 900:1 fraud:normal sampling ratio
-    - **RobustScaler**: Normalizes Time and Amount features
-    - **Early Stopping**: PR-AUC-based model selection
-    - **Fixed Seed (42)**: Reproducible results across runs
-    
-    **Why PR-AUC over ROC-AUC?**
-    
-    For highly imbalanced datasets (0.17% fraud), **PR-AUC is superior** to ROC-AUC:
-    - **ROC-AUC** is optimistic because it includes the large number of true negatives (99.83% normal transactions)
-    - **PR-AUC** focuses on precision and recall for the minority class (fraud), providing a more realistic assessment
-    - A model could achieve 97% ROC-AUC but still miss most frauds due to class imbalance
-    - PR-AUC penalizes false positives more heavily, which is critical in fraud detection
-    
-    Our switch from ROC-AUC to PR-AUC optimization improved Lift from 30x to **79.9x** (+167%).
-    
-    **Feature Importance (Top 3):**
-    1. **V14** (1.78% PR-AUC contribution)
-    2. **V4** (1.72% PR-AUC contribution)
-    3. **V8** (0.56% PR-AUC contribution)
-    
-    **Performance Metrics:**
-    - **PR-AUC**: Precision-Recall Area (best for imbalanced data)
-    - **ROC-AUC**: Receiver Operating Characteristic Area
-    - **Lift**: How many times better than random selection
-    - **Precision**: Of flagged transactions, % that are actual fraud
-    - **Recall**: Of actual frauds, % that we catch
-    - **Flagging Rate**: % of transactions sent for manual review
-    
-    **Built with:**
-    - **PyTorch 2.0+** for deep learning
-    - **Scikit-learn** for preprocessing and metrics
-    - **Streamlit** for web interface
-    - **Plotly** for interactive visualizations
-    
-    ---
-    **Usage:**
-    1. Train model: `python main.py train`
-    2. Evaluate: `python main.py evaluate`
-    3. Launch dashboard: `python main.py webapp`
-    """)
