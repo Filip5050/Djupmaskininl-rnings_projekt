@@ -7,7 +7,7 @@ class Config:
     """Central configuration for the fraud detection system"""
     
 
-    BASE_DIR = Path(r'C:\Code\Security_deep_learning')
+    BASE_DIR = Path(__file__).resolve().parent.parent
     DATA_DIR = BASE_DIR / 'data' / 'fraud_detection'
     MODELS_DIR = BASE_DIR / 'models' / 'saved_models'
     LOGS_DIR = BASE_DIR / 'logs'
