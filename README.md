@@ -95,7 +95,6 @@ python main.py webapp
 Opens Streamlit dashboard at http://localhost:8501 with:
 - **Overview**: Training metrics, confusion matrix, business impact
 - **Fraud Detection**: Test individual transactions
-- **About**: Project information
 
 ## Architecture
 
@@ -110,7 +109,7 @@ Opens Streamlit dashboard at http://localhost:8501 with:
 - **Loss Function**: Focal Loss (alpha=0.25, gamma=2.0)
 - **Optimizer**: Adam (lr=0.0005)
 - **Batch Size**: 256
-- **Seed**: 42 (fixed for reproducibility)
+- **Seed**: 42
 - **Class Weights**: fraud=900, normal=1 (WeightedRandomSampler)
 - **Early Stopping**: Based on validation PR-AUC (patience=8)
 - **LR Scheduler**: ReduceLROnPlateau (patience=3)
