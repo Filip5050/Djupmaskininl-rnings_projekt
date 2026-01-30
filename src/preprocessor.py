@@ -1,6 +1,3 @@
-"""
-Data preprocessing for fraud detection
-"""
 import numpy as np
 import pandas as pd
 import joblib
@@ -9,15 +6,12 @@ from src.config import Config
 
 
 class FraudPreprocessor:
-    """Preprocessor for credit card fraud data"""
-    
     def __init__(self):
         # Only scale Time and Amount (V1-V28 are already PCA-scaled)
         self.scaler = RobustScaler()
         self.feature_cols_to_scale = [0, 29]  # Time (index 0) and Amount (index 29)
         
     def fit_transform(self, X, y):
-        """Fit and transform training data"""
         print("\nPreprocessing fraud data...")
         
         # Convert to numpy if DataFrame
@@ -35,7 +29,6 @@ class FraudPreprocessor:
         return X, y
     
     def transform(self, X):
-        """Transform new data (no SMOTE)"""
         # Convert to numpy if DataFrame
         if isinstance(X, pd.DataFrame):
             X = X.values
@@ -50,7 +43,6 @@ class FraudPreprocessor:
         return X_transformed
     
     def save(self, path):
-        """Save preprocessor"""
         preprocessor_data = {
             'scaler': self.scaler,
             'feature_cols_to_scale': self.feature_cols_to_scale
@@ -60,7 +52,6 @@ class FraudPreprocessor:
     
     @staticmethod
     def load(path):
-        """Load preprocessor"""
         print(f"Preprocessor loaded")
         preprocessor_data = joblib.load(path / 'preprocessor.pkl')
         
