@@ -28,7 +28,7 @@ data/fraud_detection/creditcard.csv
 models/saved_models/*.pt
 models/saved_models/*.pkl
 models/saved_models/*.png
-
+models/saved_models/*.h5
 
 logs/
 *.log
