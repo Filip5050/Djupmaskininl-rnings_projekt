@@ -66,6 +66,16 @@ def load_models_and_results():
 
 model, results, eval_results, preprocessor, error_msg = load_models_and_results()
 
+# ---- Load business-optimized threshold from evaluation ----
+if eval_results and "threshold_used" in eval_results:
+    threshold = eval_results["threshold_used"]
+else:
+    threshold = Config.THRESHOLD if Config.THRESHOLD is not None else 0.5
+
+# Final safety fallback
+if threshold is None:
+    threshold = 0.5
+
 st.title("Credit Card Fraud Detection Dashboard")
 st.markdown("Real-time fraud detection powered by deep learning")
 st.markdown("---")
@@ -85,6 +95,8 @@ if results:
         st.sidebar.metric("Test PR-AUC", f"{eval_results.get('pr_auc', 0):.4f}")
         st.sidebar.metric("Test ROC-AUC", f"{eval_results.get('roc_auc', 0):.4f}")
     st.sidebar.metric("Training Time", results.get('training_time', 'N/A'))
+
+st.sidebar.metric("Decision Threshold", f"{threshold:.4f}")
 
 
 tab1, tab2= st.tabs(["Overview", "Fraud Detection"])
@@ -234,8 +246,6 @@ with tab1:
         # Confusion Matrix from Test Data
         st.subheader("Confusion Matrix (Test Set)")
         
-        from src.config import Config
-        threshold = Config.THRESHOLD
         
         try:
             import joblib
@@ -250,7 +260,7 @@ with tab1:
                 X_test_tensor = torch.FloatTensor(X_test)
                 with torch.no_grad():
                     y_pred_prob = model(X_test_tensor).numpy().flatten()
-                y_pred = (y_pred_prob > threshold).astype(int)
+                y_pred = (y_pred_prob >= threshold).astype(int)
                 
                 # Calculate confusion matrix
                 cm = confusion_matrix(y_test, y_pred)
@@ -542,7 +552,7 @@ with tab2:
                                     'threshold': {
                                         'line': {'color': "red", 'width': 4},
                                         'thickness': 0.75,
-                                        'value': Config.THRESHOLD * 100
+                                        'value': threshold * 100
                                     }
                                 }
                             ))
@@ -554,7 +564,7 @@ with tab2:
                             time.sleep(0.05)  
                         
                         # Result
-                        predicted_class = 1 if fraud_probability > 0.5 else 0
+                        predicted_class = 1 if fraud_probability >= threshold else 0
                         
                         st.write("---")
                         col1, col2 = st.columns(2)
