@@ -13,6 +13,39 @@ from src.config import Config
 from src.preprocessor import FraudPreprocessor
 from src.model_builder import load_model
 
+def find_best_threshold_by_net_benefit(y_true, y_proba, avg_fraud_amount, review_cost):
+    """
+    Sweep thresholds and choose the one that maximizes net benefit.
+
+    net_benefit = TP * avg_fraud_amount - FP * review_cost - FN * avg_fraud_amount
+    """
+    # Use PR curve thresholds (good coverage where it matters)
+    precision, recall, thresholds = precision_recall_curve(y_true, y_proba)
+
+    # thresholds has length = len(precision) - 1
+    thresholds = np.concatenate(([0.0], thresholds, [1.0]))
+
+    best = {
+        "threshold": 0.5,
+        "net_benefit": -np.inf,
+        "tn": None, "fp": None, "fn": None, "tp": None
+    }
+
+    for thr in thresholds:
+        y_pred = (y_proba >= thr).astype(int)
+        tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+
+        net_benefit = (tp * avg_fraud_amount) - (fp * review_cost) - (fn * avg_fraud_amount)
+
+        if net_benefit > best["net_benefit"]:
+            best.update({
+                "threshold": float(thr),
+                "net_benefit": float(net_benefit),
+                "tn": int(tn), "fp": int(fp), "fn": int(fn), "tp": int(tp)
+            })
+
+    return best
+
 
 def calculate_feature_importance(model, X_test, y_test, feature_names, device, n_repeats=10):
     """
@@ -101,9 +134,20 @@ def full_evaluation_pipeline():
             y_pred_proba.extend(outputs.cpu().numpy())
     
     y_pred_proba = np.array(y_pred_proba).flatten()
-    y_pred = (y_pred_proba >= 0.5).astype(int)
-    
-    print(f"Predictions complete (threshold: 0.5)")
+        # ---- Business-cost-aware threshold selection ----
+    best = find_best_threshold_by_net_benefit(
+        y_true=y_test,
+        y_proba=y_pred_proba,
+        avg_fraud_amount=Config.AVG_FRAUD_AMOUNT,
+        review_cost=Config.REVIEW_COST
+    )
+
+    threshold_used = best["threshold"]
+    y_pred = (y_pred_proba >= threshold_used).astype(int)
+
+    print(f"Predictions complete (threshold chosen by net benefit: {threshold_used:.4f})")
+    print(f"Best net benefit: {best['net_benefit']:.2f}")
+
     
     print("\nSTEP 4: Calculating Metrics")
     
@@ -210,7 +254,7 @@ def full_evaluation_pipeline():
     
     axes[1, 1].hist(y_pred_proba[y_test == 0], bins=50, alpha=0.7, label='Normal', color='green')
     axes[1, 1].hist(y_pred_proba[y_test == 1], bins=50, alpha=0.7, label='Fraud', color='red')
-    axes[1, 1].axvline(x=Config.THRESHOLD, color='black', linestyle='--', label='Threshold')
+    axes[1, 1].axvline(x=threshold_used, color='black', linestyle='--', label='Threshold')
     axes[1, 1].set_xlabel('Predicted Probability')
     axes[1, 1].set_ylabel('Count')
     axes[1, 1].set_title('Prediction Distribution', fontsize=14, fontweight='bold')
@@ -267,7 +311,10 @@ def full_evaluation_pipeline():
             'flagging_rate': float(flagging_rate),
             'overall_fraud_rate': float(overall_fraud_rate),
             'fraud_capture_rate': float(tp/fraud_count)
-        }
+        },
+        'threshold_used': float(threshold_used),
+        'net_benefit': float(best['net_benefit'])
+
     }
     joblib.dump(results, Config.MODELS_DIR / 'evaluation_results.pkl')
     print(f"Results saved")

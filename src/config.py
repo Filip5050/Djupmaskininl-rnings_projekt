@@ -29,11 +29,15 @@ class Config:
     EPOCHS = 50  
     
 
-    THRESHOLD = 0.5  
+    THRESHOLD = None  
     FRAUD_WEIGHT = 900 
     NORMAL_WEIGHT = 1  
     EARLY_STOPPING_PATIENCE = 8
     LEARNING_RATE = 0.0005  
+
+    # Business costs (can be fine tuned)
+    AVG_FRAUD_AMOUNT = 120.0      # average fraud loss ($)
+    REVIEW_COST = 2.5             # manual review / customer friction ($)
     
     
     @classmethod
